@@ -55,26 +55,28 @@ print("\t# Datasets loaded.")
 
 ##### First try with a TopPop Algorithm ######
 
-item_codes = item_profiles[:, 0]
-item_codes = item_codes[~sp.isnan(item_codes)]
+item_codes = item_profiles[1:, 0]
 
-# Selects the row of interacting items: each interactions put an entry here.
-interacting_items = interactions_map[:,1]
-interacting_items = interacting_items[~sp.isnan(interacting_items)]
+# Selects the row of interacting items and the row of ratings
+interacting_items = interactions_map[1:,1:3]
+print(interacting_items[:5])
 
 # Sort table!
 print(" # Sorting results...")
-interacting_items = interacting_items[interacting_items[:].argsort()]
+interacting_items = np.sort(interacting_items, axis=0)
 print(" # Sort completed!")
+print("--------------")
+print(interacting_items[:5])
 
 # Count each block and store the top five frequencies
 top_five = [[0, 0], [0,0], [0,0], [0,0], [0,0]]
 buffer_item = [0, 0]
 count = 0
 
-for item in interacting_items:
-	if item == buffer_item[0]:
-		buffer_item[1] = buffer_item[1] + 1
+for i in range(interacting_items.shape[0]):
+	#print(buffer_item[0])
+	if interacting_items[i][0] == buffer_item[0]:
+		buffer_item[1] = buffer_item[1] + interacting_items[i][1]
 	else:
 		for index in range(0, 5):
 			if top_five[index][1] < buffer_item[1]:
@@ -82,7 +84,7 @@ for item in interacting_items:
 				top_five.pop()
 				break
 		buffer_item[1] = 1
-	buffer_item[0] = item
+	buffer_item[0] = interacting_items[i][0]
 
 print(top_five)
 
