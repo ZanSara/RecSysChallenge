@@ -34,6 +34,8 @@ else:
     test_set = TESTING_LOCAL_SET
     print(" Local dataset chosen for testing")
     
+    
+    
 
 ###### LOADING DATASETS #####
 
@@ -46,7 +48,9 @@ print("\t  -> got {} rows".format(interactions_map.shape[0]))
 # Item Profiles' structure
 # id	title	career_level	discipline_id	industry_id	country	region	latitude	longitude	employment	tags	created_at	active_during_test
 print("\t# Loading item profiles' dataset...")
-item_profiles = sp.genfromtxt("{}item_profile.csv".format(test_set), dtype='int64', delimiter="\t")
+with open("{}item_profile.csv".format(test_set), newline='') as csvfile:
+    csvreader = csv.reader(csvfile, delimiter='\t')
+    item_profiles = np.array(list(csvreader))
 print("\t  -> got {} rows".format(item_profiles.shape[0]))
 
 # User Profiles' structure
@@ -64,23 +68,21 @@ print("\t# Datasets loaded.")
 
 
 
-#########  ALGORITHM - TopPop  #########
+#########  ALGORITHM - TopPop Refined  #########
 
-item_codes = item_profiles[1:, 0]
+item_codes_statuses = np.column_stack( (item_profiles[1:, 0], item_profiles[1:, -1]) )
+# Keep only active items
+item_codes_statuses = item_codes_statuses[item_codes_statuses[:, 1] == '1']
 
 # Selects the row of interacting items and the row of ratings
 interacting_items = interactions_map[1:,1:3]
 
-# Sort table!
-print(" # Sorting results...")
+# Sort interactions table to generate "clusters"
 interacting_items = np.sort(interacting_items, axis=0)
-print(" # Sort completed!")
 
 # Count each block and store the top five frequencies
 top_five = [[0, 0], [0,0], [0,0], [0,0], [0,0]]
 buffer_item = [0, 0]
-count = 0
-
 for i in range(interacting_items.shape[0]):
 	if interacting_items[i][0] == buffer_item[0]:
 		buffer_item[1] = buffer_item[1] + interacting_items[i][1]
@@ -112,5 +114,4 @@ with open(SUBMISSION, 'wb') as csvfile:
 		csvfile.write(bytes("{},{}\n".format(target_users[i], recommendations), 'UTF-8'))
 
 print("{} wrote successfully. Bye!".format(SUBMISSION))
-
 
