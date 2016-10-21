@@ -1,3 +1,4 @@
 full_datasets/
+__pycache__/
 sample_submission.csv
 
