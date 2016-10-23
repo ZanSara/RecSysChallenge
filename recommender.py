@@ -9,9 +9,6 @@ from optparse import OptionParser
 import csv
 
 # Constants
-TRAINING_SET = "full_datasets/"
-TESTING_LOCAL_SET = "full_datasets/"
-TESTING_FULL_SET = "full_datasets/"
 SUBMISSION = "submission.csv"
 
 
