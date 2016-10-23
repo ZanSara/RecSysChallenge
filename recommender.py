@@ -13,16 +13,16 @@ SUBMISSION = "submission.csv"
 
 
 
-def recommend(interactions_map, item_profiles, user_profiles, target_users):
+def recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_profiles, target_users):
 
 	#########  ALGORITHM - TopPop Refined  #########
 	
-	item_codes_statuses = np.column_stack( (item_profiles[1:, 0], item_profiles[1:, -1]) )
+	item_codes_statuses = np.column_stack( (item_profiles[:, 0], item_profiles[:, -1]) )
 	# Keep only active items
 	item_codes_statuses = item_codes_statuses[item_codes_statuses[:, 1] == '1']
 
 	# Selects the row of interacting items and the row of ratings
-	interacting_items = interactions_map[1:,1:3]
+	interacting_items = int_full_map[:,1:3]
 
 	# Sort interactions table to generate "clusters"
 	interacting_items = np.sort(interacting_items, axis=0)
@@ -55,8 +55,8 @@ def recommend(interactions_map, item_profiles, user_profiles, target_users):
 	with open(SUBMISSION, 'wb') as csvfile:
 		csvfile.write(bytes("user_id,recommended_items\n", 'UTF-8'))	
 		row = []
-		for i in range(1, target_users.shape[0]):
-			csvfile.write(bytes("{},{}\n".format(target_users[i], recommendations), 'UTF-8'))
+		for user in target_users:
+			csvfile.write(bytes("{},{}\n".format(user, recommendations), 'UTF-8'))
 
 	print(" -> {} wrote successfully. Bye!".format(SUBMISSION))
 

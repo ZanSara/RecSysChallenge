@@ -52,18 +52,20 @@ def split(interactions_map):
     ###### WRITE DATASETS FILES ###################
     
     with open("{}{}".format(ROOT, TEST_SET), 'wb') as csvfile:
-        csvfile.write(bytes("user_id\titem_id\tinteraction_type\tcreated_at\t\n", 'UTF-8'))	
+        csvfile.write(bytes("user_id\titem_id\tinteraction_type\tcreated_at\n", 'UTF-8'))	
         for row in test_npset:
+            string = ""
             for field in row:
-                csvfile.write(bytes("{}\t".format(field), 'UTF-8'))
-            csvfile.write(bytes("\n", 'UTF-8'))
+                string += "{}\t".format(field)
+            csvfile.write(bytes("{}\n".format(string.rstrip()), 'UTF-8'))
     print(" -> {} ({} rows, {:.1f}% of full dataset) wrote successfully".format(TEST_SET, test_npset.shape[0], test_npset.shape[0]*100/sorted_interactions.shape[0] ))
     
     
     with open("{}{}".format(ROOT, TRAINING_SET), 'wb') as csvfile:
         csvfile.write(bytes("user_id\titem_id\tinteraction_type\tcreated_at\n", 'UTF-8'))    
         for row in training_npset:
+            string = ""
             for field in row:
-                csvfile.write(bytes("{}\t".format(field), 'UTF-8'))
-            csvfile.write(bytes("\n", 'UTF-8'))
+                string += "{}\t".format(field)
+            csvfile.write(bytes("{}\n".format(string.rstrip()), 'UTF-8'))
     print(" -> {} ({} rows, {:.1f}% of full dataset) wrote successfully".format(TRAINING_SET, training_npset.shape[0], training_npset.shape[0]*100/sorted_interactions.shape[0]))

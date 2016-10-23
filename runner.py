@@ -78,12 +78,15 @@ def main():
 
     # Interactions' structure
     # user_id	item_id		interaction_type	created_at
+    print(" # Loading interactions full dataset ({})...".format(TESTING_FULL_SET))
+    int_full_map = sp.genfromtxt("{}{}".format(ROOT, TESTING_FULL_SET), dtype='int64', delimiter="\t")[1:]
+    print("   -> got {} rows".format(int_full_map.shape[0]))
     print(" # Loading interactions training dataset ({})...".format(TRAINING_SET))
-    interactions_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_SET), dtype='int64', delimiter="\t")[1:]
-    print("   -> got {} rows".format(interactions_map.shape[0]))
+    int_training_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_SET), dtype='int64', delimiter="\t")[1:]
+    print("   -> got {} rows".format(int_training_map.shape[0]))
     print(" # Loading interactions test dataset ({})...".format(test_set))
-    interactions_map = sp.genfromtxt("{}{}".format(ROOT, test_set), dtype='int64', delimiter="\t")[1:]
-    print("   -> got {} rows".format(interactions_map.shape[0]))
+    int_test_map = sp.genfromtxt("{}{}".format(ROOT, test_set), dtype='int64', delimiter="\t")[1:]
+    print("   -> got {} rows".format(int_test_map.shape[0]))
 
     # Item Profiles' structure
     # id	title	career_level	discipline_id	industry_id	country	region	latitude	longitude	employment	tags	created_at	active_during_test
@@ -129,7 +132,7 @@ def main():
         print("---------- START EXECUTION {} -------------------------------------\n".format(exec_number))
         try:
             start = time.time()
-            r.recommend(interactions_map, item_profiles, user_profiles, target_users)
+            r.recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_profiles, target_users)
             end = time.time()
             
         # except Exception: CtrlC kills the runner too
