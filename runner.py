@@ -16,6 +16,7 @@ import scipy as sp
 import numpy as np
 import csv
 import importlib as il
+import traceback
 
 
 # Constants
@@ -109,12 +110,17 @@ while True:
         end = time.time()
     # except Exception: CtrlC kills the runner too
     # except: CtrlC does NOT kill the runner at this stage
-    except:
-        print("\n\n---> EXECUTION KILLED (by an Exception or a KeyboardInterrupt)")
-        
-    if end == 0:
+    except Exception:
+        print("\n\n---> EXECUTION KILLED by an Exception:")
+        print(traceback.format_exc())
         print("\n---------- EXECUTION COMPLETED WITH AN EXCEPTION ------------------".format(exec_number, end-start))
-    else:
+    except:
+        end = time.time()
+        print("\n\n---> EXECUTION KILLED (not by an Exception)")
+        print("\n---------- EXECUTION INTERRUPTED at sec {:.3f} ------------------".format(end-start))
+        end = 0
+        
+    if end != 0:
         print("\n---------- EXECUTION {} COMPLETED in {:.3f} sec --------------------".format(exec_number, end-start))
     print("--------------------------------------------------------------------\n\n")
     
