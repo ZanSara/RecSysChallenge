@@ -13,7 +13,7 @@ SUBMISSION = "submission.csv"
 
 
 
-def recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_profiles, target_users):
+def recommend(interactions_map, item_profiles, user_profiles, target_users):
 
 	#########  ALGORITHM - TopPop Refined  #########
 	
@@ -22,7 +22,7 @@ def recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_
 	item_codes_statuses = item_codes_statuses[item_codes_statuses[:, 1] == '1']
 
 	# Selects the row of interacting items and the row of ratings
-	interacting_items = int_full_map[:,1:3]
+	interacting_items = interactions_map[:,1:3]
 
 	# Sort interactions table to generate "clusters"
 	interacting_items = np.sort(interacting_items, axis=0)
@@ -45,18 +45,27 @@ def recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_
 	recommendations = np.array(top_five)
 	print("top_five: {} ".format(top_five))
 
-
-	###### WRITE SUBMISSION FILE ###################
-
 	recommendations = ""
 	for rec in top_five:
 		recommendations += "{} ".format(rec[0])	
-		
+	
+	rec_matrix = []
+	for i in range(target_users.shape[0]):
+		rec_matrix.append(recommendations)
+	
+	return zip(target_users, rec_matrix)
+	
+	
+	
+def writecsv(user_rec, target_users):
+	
+	###### WRITE SUBMISSION FILE ###################
+	
 	with open(SUBMISSION, 'wb') as csvfile:
 		csvfile.write(bytes("user_id,recommended_items\n", 'UTF-8'))	
 		row = []
-		for user in target_users:
-			csvfile.write(bytes("{},{}\n".format(user, recommendations), 'UTF-8'))
+		for item in user_rec:
+			csvfile.write(bytes("{},{}\n".format(item[0], item[1]), 'UTF-8'))
 
-	print(" -> {} wrote successfully. Bye!".format(SUBMISSION))
+	print(" # {} wrote successfully. Bye!".format(SUBMISSION))
 

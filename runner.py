@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-#######################################################
-###                                                 ###
-###                     RUNNER                      ###
-###                                                 ###
-###  Utility platform that load datasets only once  ###
-###  and re-executes the updated recommender script ###
-###  multiple times, as the user wishes.            ###
-###                                                 ###
-#######################################################
+########################################################
+###                                                  ###
+###                     RUNNER                       ###
+###                                                  ###
+###  Utility platform that load datasets only once   ###
+###  and re-executes the updated recommender script  ###
+###  multiple times, as the user wishes.             ###
+###                                                  ###
+########################################################
 
 from optparse import OptionParser
 import time
@@ -21,9 +21,9 @@ import traceback
 
 # Constants
 ROOT = "datasets/"
-TRAINING_SET = "interactions_training.csv"
-TESTING_LOCAL_SET = "interactions_testing.csv"
-TESTING_FULL_SET = "interactions_full.csv"
+TEST_SET = "interactions_testing.csv"
+TRAINING_LOCAL_SET = "interactions_training.csv"
+TRAINING_FULL_SET = "interactions_full.csv"
 
 
 
@@ -31,11 +31,11 @@ def main():
     # Command-line parsing
     parser = OptionParser()
     parser.add_option("-f", "--test_full",
-                      action="store_true", dest="full_test_set",
-                      help="test the recommender on the full testing dataset.")
+                      action="store_true", dest="full_training_set",
+                      help="test the recommender on the full training dataset.")
     parser.add_option("-l", "--test_local",
-                      action="store_false", dest="full_test_set", default=False,
-                      help="test the recommender on the local testing dataset (default behavior).")
+                      action="store_false", dest="full_training_set", default=False,
+                      help="test the recommender on the local training dataset (default behavior).")
     parser.add_option("-s", "--split-datasets",
                       action="store_true", dest="split", default=False,
                       help="takes the full dataset file has specified in the constants and split "+
@@ -46,8 +46,8 @@ def main():
 
     # Split the dataset (una-tantum)
     if options.split:
-        print(" # Loading interactions full dataset ({})...".format(TESTING_FULL_SET))
-        interactions_map = sp.genfromtxt("{}{}".format(ROOT, TESTING_FULL_SET), dtype='int64', delimiter="\t", names=["users", "items", "inter", "date"])[1:]
+        print(" # Loading interactions full dataset ({})...".format(TRAINING_FULL_SET))
+        interactions_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_FULL_SET), dtype='int64', delimiter="\t", names=["users", "items", "inter", "date"])[1:]
         print("   -> got {} rows".format(interactions_map.shape[0]))
         print(" # Splitting datasets...")
         import dataset_splitter as s
@@ -57,12 +57,12 @@ def main():
         print(" # Done in {:3f} sec!".format(end-start))
         return
 
-    if options.full_test_set:
-        test_set = TESTING_FULL_SET
-        print("\n # FULL dataset chosen for testing")
+    if options.full_training_set:
+        training_set = TRAINING_FULL_SET
+        print("\n # FULL dataset chosen for training")
     else:
-        test_set = TESTING_LOCAL_SET
-        print("\n # LOCAL dataset chosen for testing")
+        training_set = TRAINING_LOCAL_SET
+        print("\n # LOCAL dataset chosen for training")
         
         
 
@@ -78,16 +78,13 @@ def main():
 
     # Interactions' structure
     # user_id	item_id		interaction_type	created_at
-    print(" # Loading interactions full dataset ({})...".format(TESTING_FULL_SET))
-    int_full_map = sp.genfromtxt("{}{}".format(ROOT, TESTING_FULL_SET), dtype='int64', delimiter="\t")[1:]
-    print("   -> got {} rows".format(int_full_map.shape[0]))
-    print(" # Loading interactions training dataset ({})...".format(TRAINING_SET))
-    int_training_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_SET), dtype='int64', delimiter="\t")[1:]
-    print("   -> got {} rows".format(int_training_map.shape[0]))
-    print(" # Loading interactions test dataset ({})...".format(test_set))
-    int_test_map = sp.genfromtxt("{}{}".format(ROOT, test_set), dtype='int64', delimiter="\t")[1:]
-    print("   -> got {} rows".format(int_test_map.shape[0]))
-
+    int_training_map = load_int(training_set, "training")
+    
+    # Load the test set only if i'm training on the local set
+    int_test_map = []
+    if training_set == TRAINING_LOCAL_SET:  
+        int_test_map = load_int(TEST_SET, "test")
+        
     # Item Profiles' structure
     # id	title	career_level	discipline_id	industry_id	country	region	latitude	longitude	employment	tags	created_at	active_during_test
     print(" # Loading item profiles' dataset...")
@@ -118,13 +115,23 @@ def main():
     ########  RUNNING LOOP ##################
 
     import recommender as r
+    import map_evaluator as e
     exec_number = 0
     while True:
-        user_input = input("\n # Press X to exit, or any other key to re-execute the recommender algorithm.\n")
+        user_input = input("\n # Press X to exit, F to load full datasets, L to load local datasets\n   or any other key to re-execute the recommender algorithm.\n")
         if user_input=="X" or user_input=="x":
             break
+        if user_input=="F" or user_input=="f":
+            training_set = TRAINING_FULL_SET
+            int_training_map = load_int(training_set, "training full")
+            continue
+        if user_input=="L" or user_input=="l":
+            training_set = TRAINING_LOCAL_SET
+            int_training_map = load_int(training_set, "training local")
+            continue
             
         il.reload(r)
+        il.reload(e)
         exec_number += 1
         start = 0
         end = 0
@@ -132,7 +139,7 @@ def main():
         print("---------- START EXECUTION {} -------------------------------------\n".format(exec_number))
         try:
             start = time.time()
-            r.recommend(int_training_map, int_test_map, int_full_map, item_profiles, user_profiles, target_users)
+            user_ratings = r.recommend(int_training_map, item_profiles, user_profiles, target_users)
             end = time.time()
             
         # except Exception: CtrlC kills the runner too
@@ -149,12 +156,31 @@ def main():
             
         if end != 0:
             print("\n---------- EXECUTION {} COMPLETED in {:.3f} sec --------------------".format(exec_number, end-start))
+
+            # Do evaluate if I have a test_set to evaluate on
+            if training_set == TRAINING_LOCAL_SET:  
+                print("---> Evaluation:")
+                e.evaluate(int_test_map, user_ratings)
+            else:
+                print("---> Writing Sumbission File")
+                r.writecsv(user_ratings, target_users)
+            
         print("--------------------------------------------------------------------\n\n")
         
 
     print("\nThe runner's exiting. Bye bye!")
 
 
+
+
+# Load a specific interactions dataset
+def load_int(int_file, name):
+    print(" # Loading interactions {} dataset ({})...".format(name, int_file))
+    interactions = sp.genfromtxt("{}{}".format(ROOT, int_file), dtype='int64', delimiter="\t")[1:]
+    print("   -> got {} rows".format(interactions.shape[0]))
+    return interactions
+    
+    
 
 if __name__ == "__main__":
     main()
