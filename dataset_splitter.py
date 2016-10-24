@@ -22,27 +22,33 @@ def split(interactions_map):
     ###### SPLITTING ALGORITHM ###################
     
 	# Sort interactions table to generate "clusters" of users
-    # and interactions ordered in time
-    ind = np.lexsort((interactions_map["date"], interactions_map["users"]))
+    # and items - should also shuffle by date!
+    ind = np.lexsort((interactions_map["items"], interactions_map["users"]))
     sorted_interactions = interactions_map[ind]
+    
+    print(sorted_interactions[:20])
    
 	# For each block move the first five elements in the test set  
     # matrix, the rest of them in the training set matrix
     test_set = []
     training_set = []
     buffer_item = 0
-    counting = 0
+    buffer_user = 0
+    counting = 1
     for element in sorted_interactions:
         
-        if element[0] == buffer_item:
-            if counting < 5:
+        if element[0] == buffer_user:
+            if counting < 5 or element[1] == buffer_item:
                 test_set.append( element )
-                counting += 1
+                if element[1] != buffer_item:
+                    counting += 1
+                    buffer_item = element[1]
             else:
                 training_set.append( element )
         else:
             counting = 1
-            buffer_item = element[0]
+            buffer_user = element[0]
+            buffer_item = element[1]
             test_set.append( element )
 
     test_npset = np.array(test_set)

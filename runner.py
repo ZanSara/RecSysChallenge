@@ -162,7 +162,7 @@ def main():
                 print("---> Evaluation:")
                 e.evaluate(int_test_map, user_ratings)
             else:
-                print("---> Writing Sumbission File")
+                print("---> Writing Submission File")
                 r.writecsv(user_ratings, target_users)
             
         print("--------------------------------------------------------------------\n\n")

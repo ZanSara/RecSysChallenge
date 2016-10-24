@@ -24,4 +24,11 @@
 
 
 def evaluate(int_test_map, user_ratings):
-    print("Evaluation on the test set: {}".format("?"))
+    
+    sum_ap = 0
+    for user in user_ratings:
+        recom = user_ratings.split()
+    
+    mapval = 0
+    
+    print(" # MAP@5 value: {:.7f}".format( mapval ))
