@@ -49,10 +49,13 @@ def main():
         print(" # Loading interactions full dataset ({})...".format(TRAINING_FULL_SET))
         interactions_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_FULL_SET), dtype='int64', delimiter="\t", names=["users", "items", "inter", "date"])[1:]
         print("   -> got {} rows".format(interactions_map.shape[0]))
+        print(" # Loading target users' table ...")
+        target_users = sp.genfromtxt("{}target_users.csv".format(ROOT), dtype='int64', delimiter="\t")[1:]
+        print("   -> got {} rows".format(target_users.shape[0]))
         print(" # Splitting datasets...")
         import dataset_splitter as s
         start = time.time()
-        s.split(interactions_map)
+        s.split(interactions_map, target_users)
         end = time.time()
         print(" # Done in {:3f} sec!".format(end-start))
         return

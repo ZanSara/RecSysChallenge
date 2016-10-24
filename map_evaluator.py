@@ -23,11 +23,14 @@
 
 
 
-def evaluate(int_test_map, user_ratings):
+def evaluate(relevant, user_ratings):
     
     sum_ap = 0
     for user in user_ratings:
-        recom = user_ratings.split()
+        recom = set(user_ratings.split())
+        for i in range(recom.size(), -1, -1):
+            if 
+            
     
     mapval = 0
     
