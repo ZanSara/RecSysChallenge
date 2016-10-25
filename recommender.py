@@ -50,10 +50,10 @@ def recommend(interactions_map, item_profiles, user_profiles, target_users):
 		recommendations += "{} ".format(rec[0])	
 	
 	rec_matrix = []
-	for i in range(target_users.shape[0]):
-		rec_matrix.append(recommendations)
+	for user in target_users:
+		rec_matrix.append([user, recommendations])
 	
-	return zip(target_users, rec_matrix)
+	return np.array(rec_matrix)
 	
 	
 	

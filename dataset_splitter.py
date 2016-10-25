@@ -81,7 +81,9 @@ def split(interactions_map, target_users):
         if not user in relevants[:,0]:
             relevants[last_row][0] = user
             last_row += 1
-            
+    
+    sorted_relevants = relevants[relevants[:,0].argsort()]
+    print(sorted_relevants)
             
     
     ###### WRITE DATASETS FILES ###################
@@ -97,7 +99,7 @@ def split(interactions_map, target_users):
 
     with open("{}{}".format(ROOT, TEST_SET), 'wb') as csvfile:
         csvfile.write(bytes("user_id\trec1\trec2\trec3\trec4\trec5\n", 'UTF-8'))	
-        for row in relevants:
+        for row in sorted_relevants:
             string = ""
             for field in row:
                 string += "{}\t".format(field)

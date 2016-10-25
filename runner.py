@@ -86,7 +86,7 @@ def main():
     # Load the test set only if i'm training on the local set
     int_test_map = []
     if training_set == TRAINING_LOCAL_SET:  
-        int_test_map = load_int(TEST_SET, "test")
+        int_test_map = load_int(TEST_SET, "test")[1:]
         
     # Item Profiles' structure
     # id	title	career_level	discipline_id	industry_id	country	region	latitude	longitude	employment	tags	created_at	active_during_test
@@ -132,9 +132,14 @@ def main():
             training_set = TRAINING_LOCAL_SET
             int_training_map = load_int(training_set, "training local")
             continue
-            
-        il.reload(r)
-        il.reload(e)
+        
+        try:
+            il.reload(r)
+            il.reload(e)
+        except SyntaxError:
+            print(traceback.format_exc())
+            continue
+        
         exec_number += 1
         start = 0
         end = 0
@@ -163,7 +168,11 @@ def main():
             # Do evaluate if I have a test_set to evaluate on
             if training_set == TRAINING_LOCAL_SET:  
                 print("---> Evaluation:")
-                e.evaluate(int_test_map, user_ratings)
+                try:
+                    e.evaluate(int_test_map, user_ratings)
+                except Exception:
+                    print(traceback.format_exc())
+                    print("\n-----> Evaluation gave exception")
             else:
                 print("---> Writing Submission File")
                 r.writecsv(user_ratings, target_users)
