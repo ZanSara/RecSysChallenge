@@ -18,29 +18,14 @@ SUBMISSION = "submission.csv"
 
 def recommend(interactions_map, item_profiles, user_profiles, target_users):
 	
-	return recommendTopPop(interactions_map, item_profiles, user_profiles, target_users)
+	############## OLDER ALGS TO RUN FOR COMPARISON ##################################
+	
+	#return recommendTopPop(interactions_map, item_profiles, user_profiles, target_users)
+	#return recommendTopPopNP(interactions_map, item_profiles, user_profiles, target_users)
 
-	
-	#print(interactions_map.groupby('item_id').size()[:10])
-	#print(interactions_map.item_id.value_counts()[:5])
-	top_rated = interactions_map.item_id.value_counts()[:5].index
-	print("Top Rated: {}".format(top_rated))
-	
-	print("Creating recommendations table...")
-	rec_matrix = pd.DataFrame(columns=['recs'], index = target_users.user_id )
-	for i in range(rec_matrix.shape[0]):
-		rec_matrix.iloc[i].recs = list(top_rated)
-	print("Recommendations created!")
-	#print(rec_matrix[:10])
-	return rec_matrix
-	
-	
-	
-	
-	
-	return recommendTopPop(interactions_map, item_profiles, user_profiles, target_users)
 
-	#########  ALGORITHM - Bare Contex-Based  #########
+
+	#########  ALGORITHM - Bare Contex-Based  ###########
 	##
 	## 					Similarity:
 	##         S_ij  =  v_i*v_j / (|v_i|*|v_j|+k)
@@ -48,10 +33,12 @@ def recommend(interactions_map, item_profiles, user_profiles, target_users):
 	## 				  Predicted rating:
 	##      R_ui  =  ∑(j) (r_uj * S_ij) / ∑(j) S_ij
 	##  
-	####################################################
+	######################################################
+	
+	
 	
 	rec_matrix = []
-	for u in 5: #range(target_users.shape[0]):
+	for i, user in enumerate(target_users):
 		
 		# Find items he interacted with
 		# Remove all expired entries and interacted items from candidate list
@@ -60,8 +47,50 @@ def recommend(interactions_map, item_profiles, user_profiles, target_users):
 		
 		
 		# Find items the user interacted with - the j items
-		interactions = interactions_map[:,0:1]
-		interactions = np.sort(interactions, axis=0)
+		#interactions = interactions_map[['user_id', 'item_id']]
+		
+		# Find active items
+		active_items = item_profiles.loc[item_profiles.active_during_test == 0]
+		
+		# Remove unactive items from interactions
+		ineractions_map = interactions_map.set_index('user_id')
+		active_items_interactions = interactions_map[~interactions_map['item_id'].isin(active_items['id'])]
+		
+		# Group
+		active_items_interactions = active_items_interactions.groupby(['user_id'])
+		
+		for k, gp in enumerate(active_items_interactions):
+			if k>5: break
+			print('---------')
+			print(gp)
+			
+			
+			
+			
+		# base similarity matrix (all dot products)
+		# replace this with A.dot(A.T).toarray() for sparse representation
+		similarity = np.dot(A, A.T)
+
+		# squared magnitude of preference vectors (number of occurrences)
+		square_mag = numpy.diag(similarity)
+
+		# inverse squared magnitude
+		inv_square_mag = 1 / square_mag
+
+		# if it doesn't occur, set it's inverse magnitude to zero (instead of inf)
+		inv_square_mag[numpy.isinf(inv_square_mag)] = 0
+
+		# inverse of the magnitude
+		inv_mag = numpy.sqrt(inv_square_mag)
+
+		# cosine similarity (elementwise multiply by inverse magnitudes)
+		cosine = similarity * inv_mag
+		cosine = cosine.T * inv_mag
+			
+			
+			
+		
+		return
 		
 		j_items = []
 		for i in range(interactions_map.shape[0]):
@@ -88,51 +117,50 @@ def recommend(interactions_map, item_profiles, user_profiles, target_users):
 
 
 
+def writecsv(user_rec, target_users):
+	
+	###### WRITE SUBMISSION FILE ###################
+	
+	with open(SUBMISSION, 'wb') as csvfile:
+		csvfile.write(bytes("user_id,recommended_items\n", 'UTF-8'))	
+		for item in user_rec.itertuples():
+			csvfile.write(bytes("{},{}\n".format(item[0], " ".join( str(item[1])[1:-1].split(', ')) ), 'UTF-8'))
+
+	print(" # {} wrote successfully. Bye!".format(SUBMISSION))
+
+
+
+
+
+
+
+
+################################################################################
+################## OLD ALGS ####################################################
+################################################################################
+
 
 def recommendTopPop(interactions_map, item_profiles, user_profiles, target_users):
 
 	#########  ALGORITHM - TopPop Refined  #########
+	interactions_map.info()
+	
 	
 	item_codes_statuses = item_profiles[['id', 'active_during_test']]
 	# Keep only active items
-	item_codes_statuses = item_codes_statuses.loc[item_codes_statuses.active_during_test == 1]
+	#item_codes_statuses = item_codes_statuses.loc[item_codes_statuses.active_during_test == 1]
+	#print(item_codes_statuses.shape)
 	
 	# Selects the row of interacting items and the row of ratings
 	interacting_items = interactions_map.drop('created_at', 1)
+	#interacting_items = interacting_items.drop('x', 1)
+	interacting_items = interacting_items.drop('user_id', 1)
+	
 
-	# Sort interactions table to generate "clusters"
-	#interacting_items = np.sort(interacting_items, axis=0)
-
-	# Count each block and store the top 20 frequencies
+	# Count each block and store the top frequencies
 	top_popular = interacting_items.groupby('item_id').sum().sort(['interaction_type'], ascending=False)
+	print("Top Pop: {}".format(top_popular.head()))
 	top_popular = top_popular.index
-	print(top_popular)
-	
-	#top_twenty = [[0, 0] for x in range(50)]
-	#buffer_item = [0, 0]
-	
-	#for i in range(interacting_items.shape[0]):
-		#if interacting_items[i][1] == buffer_item[0]:
-			#buffer_item[1] = buffer_item[1] + interacting_items[i][2]
-			#if interacting_items[i][2] == 3 and interacting_items[i][0] not in top_twenty[buffer_item[2]][2]:
-				#try:
-					#top_twenty[buffer_item[2]][2].append([interacting_items[i][0]])
-				#except:
-					#print("Eccezione! {}: {} - {}".format(buffer_item[2], len(top_twenty), top_twenty[1]))
-					#return 0
-		#else:
-			#for index in range(0, 50):
-				#if top_twenty[index][1] < buffer_item[1]:
-					#top_twenty.insert(index, [buffer_item[0], buffer_item[1], []])
-					#top_twenty.pop()
-					#buffer_item[2] = index
-					#break
-			#buffer_item[1] = 1
-		#buffer_item[0] = interacting_items[i][1]
-
-	#r = [ [item[0], item[1]] for item in top_twenty ]
-	#recommendations = np.array(r)
-	#print("top_five: {} ".format(recommendations[:5]))
 	
 	print("Finding sent CVs...")
 	cv_sent = interactions_map[['user_id', 'item_id', 'interaction_type']].loc[interactions_map.interaction_type == 3]
@@ -166,21 +194,63 @@ def recommendTopPop(interactions_map, item_profiles, user_profiles, target_users
 			print("needed {:.2f}sec to reach {:.2f}% of calculations".format(end-start, a*100/target_users.shape[0]) )
 			break
 	print("Recommendations created!")
-	print(rec_matrix[:20])
 	
 	return rec_matrix
 	
 	
 	
-	
-def writecsv(user_rec, target_users):
-	
-	###### WRITE SUBMISSION FILE ###################
-	
-	with open(SUBMISSION, 'wb') as csvfile:
-		csvfile.write(bytes("user_id,recommended_items\n", 'UTF-8'))	
-		for item in user_rec.itertuples():
-			csvfile.write(bytes("{},{}\n".format(item[0], " ".join( str(item[1])[1:-2].split(', ')) ), 'UTF-8'))
+def recommendTopPopNP(interactions_map, item_profiles, user_profiles, target_users):
 
-	print(" # {} wrote successfully. Bye!".format(SUBMISSION))
+	#########  ALGORITHM - TopPop Refined  #########
+	item_profiles = np.array(item_profiles)
+	interactions_map = np.array(interactions_map)
+	
+	item_codes_statuses = np.column_stack( (item_profiles[:, 0], item_profiles[:, -1]) )
+	# Keep only active items
+	item_codes_statuses = item_codes_statuses[item_codes_statuses[:, 1] == 1]
+	#print(interactions_map.shape)
+	
+	# Selects the row of interacting items and the row of ratings
+	interacting_items = interactions_map[:,1:3]
+	#print(interactions_map.shape)
 
+	# Sort interactions table to generate "clusters"
+	interacting_items = np.sort(interacting_items, axis=0)
+
+	# Count each block and store the top five frequencies
+	top_five = [[0, 0], [0,0], [0,0], [0,0], [0,0]]
+	buffer_item = [0, 0]
+	a = 0
+	for i in range(interacting_items.shape[0]):
+		a = i
+		if interacting_items[i][0] == buffer_item[0]:
+			buffer_item[1] = buffer_item[1] + interacting_items[i][1]
+		else:
+			for index in range(0, 5):
+				if top_five[index][1] < buffer_item[1]:
+					top_five.insert(index, [buffer_item[0], buffer_item[1]])
+					top_five.pop()
+					break
+			buffer_item[1] = 1
+		buffer_item[0] = interacting_items[i][0]
+
+	recommendations = np.array(top_five)
+	print("top_five: {} ".format(top_five))
+	
+	#recommendations = ""
+	#for rec in top_five:
+	#	recommendations += "{} ".format(rec[0])	
+	recommendations = [r[0] for r in top_five]
+	
+	rec_matrix = []
+	for user in target_users.iterrows():
+		rec_matrix.append([ user[1][0], recommendations])
+	
+	#return zip(target_users, rec_matrix)
+	
+	# For the evaluator
+	evaluable = pd.DataFrame( rec_matrix )
+	evaluable = evaluable.rename(columns={0: 'user_id', 1: 'recs'})
+	return evaluable
+	
+	

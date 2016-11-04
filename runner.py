@@ -23,7 +23,7 @@ import traceback
 # Constants
 ROOT = "datasets/"
 TEST_SET = "interactions_testing.csv"
-TRAINING_LOCAL_SET = "interactions_training.csv"
+TRAINING_LOCAL_SET = "interactions_full.csv"
 TRAINING_FULL_SET = "interactions_full.csv"
 
 
@@ -47,6 +47,9 @@ def main():
 
     # Split the dataset (una-tantum)
     if options.split:
+        print("CAREFUL HERE! Save your datasets somewhere before proceeding!")
+        return
+        
         print(" # Loading interactions full dataset ({})...".format(TRAINING_FULL_SET))
         #interactions_map = sp.genfromtxt("{}{}".format(ROOT, TRAINING_FULL_SET), dtype='int64', delimiter="\t", names=["users", "items", "inter", "date"])[1:]
         interactions_map =  pd.read_csv("{}{}".format(ROOT, TRAINING_FULL_SET), sep="\t")
