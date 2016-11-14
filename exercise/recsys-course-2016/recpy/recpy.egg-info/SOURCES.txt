@@ -1,7 +1,0 @@
-setup.py
-_cython/_similarity.c
-recpy.egg-info/PKG-INFO
-recpy.egg-info/SOURCES.txt
-recpy.egg-info/dependency_links.txt
-recpy.egg-info/requires.txt
-recpy.egg-info/top_level.txt
